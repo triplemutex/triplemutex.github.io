@@ -1,0 +1,315 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+		<meta content="utf-8" http-equiv="encoding">
+		<script src="automaticplanning.js"></script>
+		<script>
+
+// stack var to easily trace in dev tools
+var automaticplanning;
+
+// on load
+window.onload = function() 
+{
+	// instantiate AutomaticPlanning class 
+	automaticplanning = new AutomaticPlanning(document.getElementById("apdiv"));
+}
+		</script>
+		<style>
+
+body
+{
+	margin: 0px;
+	font-family: sans;
+	background-color: #A5C7CB;
+}
+
+a,h1, h2, h3, h4, h5, h6
+{
+	color: #3b5f82;
+}
+
+
+
+#apdiv{
+	margin: auto;
+	text-align: center;
+}
+
+#articlediv
+{
+	margin: auto;
+	width: 1000px;
+	height: 100%;
+	background-color: #e8f1f1;
+	padding: 50px;
+	text-justify: inter-word;
+	text-align: justify;
+        background-image: linear-gradient(to bottom, rgba(255,255,255,0) 0%,rgba(232, 241, 241, 1) 90px),url("../img/metroplolistraffic..jpg");
+	background-repeat: no-repeat;
+}
+
+#instructionsdiv {
+        margin: 20px;
+}
+
+#ap_buttonsdiv {
+	text-align: center;
+	margin: 20px;
+}
+
+#ap_buttonsdiv * {
+	margin-right: 10px;
+}
+
+#numclustersinput
+{
+	width: 40px;
+}
+
+#positioninput
+{
+	width: 80px;
+}
+
+
+#ap_canvas
+{
+	background-color: white;
+
+}
+
+#triplemutexlink
+{
+	color: white;
+	font-weight: bold;
+	text-decoration:none; 
+}
+
+
+
+		</style>
+	</head>
+	<body>
+<div id="articlediv">
+<a href="../index.html" id="triplemutexlink">TRIPLEMUTEX.GITHUB.IO</a>
+<h1>
+How does automated logistic route planning work ?
+</h1>
+<p>
+Applying basic machines learning algorithms to a real life problem: automated route planning for transport logistic
+<p>
+This project aims at exploring how basic machine machine learning algorithms work by applying them to a simplified version of a real life problem. This is a developers log along the lines of investigation: analysis of the problem, exploring solutions, designing 
+and writing code that implements them and eventually documenting the process. The resulting application (see hereunder, implemented as an ECMAScript Class) is meant to illustrate the logic of the algorithms applied and make it accessible on granular level.
+<p>
+Check out the github code repository <a href="https://github.com/triplemutex/automaticplanning_educational">here</a>, play with it, and read about the process of making it hereunder
+<p>
+
+
+		<div id="apcontainerdiv">
+			<div id="instructionsdiv">
+<h4>Instructions:</h4>
+    * add 'trajectories' by clicking on the canvas<br> 
+    * the first click will add the origin the second the destination<br>
+    * optionally set a higher number of clusters<br>
+    * click route to cluster the trajectories into trips and route those trips<br>
+			</div>
+			<div id="apdiv"></div>
+		</div>
+<p>
+<p>
+<p>
+<p>
+
+<h2>
+A little background
+</h2>
+
+<p>
+Most of digital infrastructure for transport logistics consists of providing relatively simple functionality: connecting systems, order and resources administration, pricing, billing and eventually archiving. All of that that is covered by conventional wisdom of 
+every day applied IT techniques: static data models, accessed and updated via interfaces for humans and machines. Some types of functionality will require more sophisticated techniques, prominently automated resource allocation and usage optimization.
+Distributing shipment request among available vehicles and plotting routes is a good example.
+<p>
+
+In standard packages produced for the sector most resource allocation and use optimization is done by a human operator via a user interfaces matching the business logic of the users. If 
+such things needs to be done automatically, in most scenarios, specialized providers will offer online services or proprietary black boxes to which parameters (e.g shipment requests and vehicle lists) are fed and that will return solutions based upon them ( 
+e.g. distribution of shipments and actual routes).
+<p>
+
+For developers who want to build their own versions, there is a number of packages that provide the necessary APIs. There is even a number of Open Source projects for analysis. Yet, if to be done properly, using them requires a mathematical understanding of the 
+problems to be solved and of the type of methods applied in the tools to be used.  This project aims at this last requirement.
+<p>
+<p>
+
+<h2>
+Goal of this project and the way to achieve it
+</h2>
+
+<p>
+<h3>
+Using a real life problem
+</h3>
+
+The real goal of this projects to understand how machine learn algorithms work by applying and adapting them. The approach is therefore to depart from a 'real life' problem, stripping as much of the unnecessary complexity 
+away as possibly and then find a straight forward way to solve the core of the problem laid bare.
+<p>
+
+In real life, users wish to 'automate the planning': have a program allocate shipment requests to a fleet of vehicles and plot routes for fulfilment. This can be reduced to two essential parts: clustering the shipments into trips and routing those 
+efficiently.
+<p>
+<p>
+
+<h3>
+Why is 'machine learning' required here anyway ?
+</h3>
+
+
+<p>
+
+The task at hand is to produce a (computable) definition of the best possible relation between members of a 'random' dataset. Such a definition can only be obtained by iteration and optimization. In other words, the algorithms
+used need to run repeatedly, using the output of one turn to improve the output of the next until optimization criteria are met.
+<p>
+
+Of course, the data at hand is not completely random but has relevant datapoints in common: e.g a shipment request has minimally a start and an end point. Yet the data is random enough to make it impossible define a function programmatically that will output a 
+solution for any single data member without taking all solutions for all other members into account. 
+<p>
+
+As shipment requests go: from the coordinates from any pickup and deliverypoints alone, it is impossible to derive the trip to book it on or it's position in a 
+route, without computing the assignments of all other points. This requires rerunning the assignment routine until the result cannot be improved (reaches 'convergence'). Equally assigning the different locations of shipments within a group (a trip really) to positions 
+in a route requires the same approach for the same reason.
+<p>
+
+How is that machine learning ? The process for grouping shipment requests into trips yields a set of new functions ( e.g. f(x) ( point x cannot be further than a from the centre of a cluster [b,c,...] ) only after the values for a and b,c,.. are adjusted until the 
+function reliably yield a correct result for all points x. The values a and b,c,.. in such functions are constants that need to be 'learned' by optimizing through iterated adjustments. Of course , the newly created function (algorithm) is only useful fro the dataset 
+itself, so the 'training set' to build the algorithm is the full field of analysis. It's basic level, but machine learning no less
+<p>
+
+The process for routing is structurally different, but essentially relies on the same pattern of iteration and optimization until convergence is reached,
+<p>
+<p>
+
+<h2>
+Clustering
+</h2>
+
+<p>
+
+<h3>
+Basic
+</h3>
+
+<p>
+
+In this context, the goal is to group shipment requests according to their properties. For basic understanding, this can be reduced to assigned points to be visited to a given number of vehicles, according to the points 
+proximity to each other. There is various existing algorithms of different complexity. I choose K-MEANS because it's widely presented as one of the simplest and popular machine learning algorithms'. The theory (<a 
+href="https://en.wikipedia.org/wiki/K-means_clustering">https://en.wikipedia.org/wiki/K-means_clustering</a>) is illustrated well in the first part of this article (<a 
+href="https://www.toptal.com/machine-learning/clustering-algorithms">https://www.toptal.com/machine-learning/clustering-algorithms</a>). <p>
+
+<h3>
+In a nutshell:
+</h3>
+<p>
+
+0 initially plot a set of markers ('centroids') in a field full of points at random locations:<br>
+	
+1 group points by their distances to each nearest marker, <br>
+2 move each centroid to the centre for their group (by calculating the groups centre and setting the centroid to it)<br>
+3 repeat from step 1 until the positions of the centroids remain the same at every new iteration<br>
+<p>
+
+In it's most basic form, it will cluster by distance. In step 1, each point is assigned to the centroid is nearest to, no matter how many other points have been assigned to it already. 
+<p>
+<p>
+
+<h3>
+Quantified
+</h3>
+
+<p>
+
+In automated resource allocation, specifically in allocation shipment requests to a fleet , it is crucial to be able to take the capacity of vehicles into account. In a basic variation, it's about how many shipments a vehicle can hold. Can be any pre-set value , 
+for example an equal share of the total points plotted. 
+<p>
+
+This modification requires to pick the points by order of smallest distance to any centroid, rather than just looping through them and attributing them until a cluster is full
+<p>
+
+<h3>
+Clustering shipments
+</h3>
+
+<p>
+<p>
+
+Shipments in transport logistics always have a pickup and a delivery point. Effectively allocating such shipments means grouping them by origin and destination, possibly including whatever can be taken on the way. 
+<p>
+
+K-MEANS relies on comparing distances (or differences) between points, so we need to represent shipments as single points with relevant dimensional properties. Mathematically, origin an destination can be 
+represented by the shipments trajectories mid point and its headings angle. 
+<p>
+
+While the algorithmic logic is the same than in basic cartesian point clustering, angles still need to be treated as angles when calculating averages for centroids or comparing distances/differences: The average angle as used in centroids is therefore
+not the sum of all angles divided by the total number of group members, but the atan2 of the sum of sini and cosini respectively. Likewise, the relevant difference between angles is not the absolute one but the smallest possible difference angle.
+<p>
+
+When comparing trajectory mid points and cluster centroids, we factor in the average length of all shipment trajectories in order to better group a field of short trajectories predominantly per cartesian midpoint and long trajectories per heading. 
+<p>
+<p>
+
+
+<h2>
+Routing
+</h2>
+
+<p>
+
+<h3>
+Basic
+</h3>
+
+<p>
+
+Routing is this about finding an efficient order to visit a set of points. Efficient means that the total distance covered should be as short as possible. Here again there is various approaches of different complexity. I chose the Nearest Neighbour approach
+because it's easy to understand and modify (see bellow), has low computational costs (number of comparisons required) and appears to performs reasonably well in practice.
+<p>
+
+<h3>
+In a nutshell
+</h3>
+
+<p>
+
+0 choose a starting point <br>
+1 calculate the distance from the starting points to all points in the set<br>
+2 set the the point with the lowest distance as new starting point<br>
+3 discard the old starting point from the set and store it in the route<br>
+4 repeat from step 1 until no points remain in the set<br>
+<p>
+<p>
+
+<h3>
+Choosing a starting point
+</h3>
+
+<p>
+
+In order to get a sensible route, choosing a good starting point is essential. In a practical application we might want to let a user choose a certain starting point (for example the company depot) but we also want to provide a mechanism to choose a 'natural' one.
+In our approach so far, trips are 'directional' as one of clustering criteria is the heading of a trajectory. In this context, the point farthest from the centre of the cluster seems a good natural starting starting point 
+<p>
+<p>
+
+<h3>
+Routing Trajectories
+</h3>
+
+<p>
+
+As the set we want to route contains trajectories rather than single points, we need to modify the algorithm to make sure that all pickups are made before deliveries are attempted. this can be achieved by taking each points 
+function (origin or destination) into account and only considering origins and destinations with visited origins into account. We therefore need to store not only the function of a point but also an indication to its 
+counterpart (origins for destinations) and at every iteration only take points into account that can be visited at all. As we are discarding any already visited point at every round, we can just skip destination points who's 
+origins are still in the set.
+
+</div>
+
+</body>
